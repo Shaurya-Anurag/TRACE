@@ -9,7 +9,7 @@ fn show_guidance_preview(app: tauri::AppHandle) -> Result<(), String> {
     WebviewWindowBuilder::new(
       &app,
       "guidance",
-      WebviewUrl::App("index.html?guidance=1".into()),
+      WebviewUrl::App("index.html".into()),
     )
     .title("TRACE guidance")
     .transparent(true)
