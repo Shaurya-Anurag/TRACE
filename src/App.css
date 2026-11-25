@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;1,500;1,600&display=swap');
+500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;1,500;1,600&display=swap');
 :root{font-family:'DM Sans', 'Segoe UI',sans-serif;color:#e0d9d3;background:#171614;font-synthesis:none;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased}
 *{box-sizing:border-box}button,input{font:inherit}button{cursor:pointer}
 .app-shell{min-height:100vh;display:flex;background:#171614;color:#e0d9d3;overflow:hidden}
@@ -8,3 +8,57 @@
 @media(max-width:1100px){.sidebar{width:215px;flex-basis:215px}.home-page,.content-page{padding-left:30px;padding-right:30px}.home-lower{grid-template-columns:1fr 1fr}.guidance-card{grid-column:span 2;min-height:210px}.guidance-copy h2{font-size:25px}}
 @media(max-width:800px){.sidebar{width:65px;flex-basis:65px;padding:22px 9px}.brand{padding:0 5px 35px}.brand>div:last-child,.side-label,.nav-item>span:not(.nav-glyph),.privacy-mini,.profile-row>div:not(.avatar),.settings-link>span:not(.nav-glyph){display:none}.nav-item{justify-content:center;padding:0}.nav-glyph{font-size:18px}.profile-row{justify-content:center}.profile-row .icon-button{display:none}.topbar{padding:0 20px}.home-page,.content-page{padding:32px 22px}.home-lower{grid-template-columns:1fr}.guidance-card{grid-column:auto}.home-task-grid{grid-template-columns:1fr}.welcome h1,.page-intro h1{font-size:39px}.toolbar{align-items:stretch;flex-direction:column}.search-field{max-width:none}.filter-pills{overflow:auto}.computer-summary{grid-template-columns:repeat(3,1fr);gap:10px}.computer-summary .summary-note{grid-column:span 3;justify-content:flex-start;padding:9px 0 0}.preferences-layout{grid-template-columns:1fr}.preferences-nav{display:flex;overflow:auto}.preferences-nav button{white-space:nowrap}.support-state{min-width:auto}.app-row .quiet-button{font-size:0}.app-row .quiet-button .icon{width:15px;height:15px}}
 @media(max-width:540px){.topbar{height:54px;flex-basis:54px}.local-indicator{font-size:0}.home-page,.content-page{padding:26px 15px}.welcome{margin-bottom:35px}.welcome h1,.page-intro h1{font-size:34px}.command-hint{flex-wrap:wrap}.command-hint span{width:100%}.possibility-grid{grid-template-columns:1fr}.not-listed{align-items:flex-start;flex-wrap:wrap}.not-listed .text-link{margin-left:44px}.session-main>.status{display:none}.session-progress{margin-left:0}.session-detail{margin-left:0}.timeline-row{grid-template-columns:65px 15px 1fr;gap:8px}.timeline-row:before{left:72px}.app-row{gap:8px;padding:10px}.support-state{font-size:0}.support-state i{width:7px;height:7px}.app-row .quiet-button{padding:5px}.preferences-content{padding:15px}.filter-pills button{padding:7px 8px}}
+
+/* Frameless, compact desktop layout */
+html,body,#root{width:100%;height:100%;min-height:0;overflow:hidden}
+.app-shell{height:100%;min-height:0;overflow:hidden}
+.main-area{height:100%;min-height:0}
+.topbar{user-select:none;cursor:default}
+.topbar [data-tauri-drag-region]{-webkit-user-select:none}
+.home-page{height:100%;min-height:0;max-width:1320px;padding:22px 38px 20px;display:flex;flex-direction:column;justify-content:center;gap:0;overflow:hidden}
+.welcome{flex:0 0 auto;margin:0 auto 27px;max-width:720px}
+.welcome h1{font-size:42px;line-height:1.02;margin:12px 0 8px}
+.welcome-copy{margin:0}
+.command-box{height:54px;margin:18px auto 9px}
+.command-hint{font-size:9px}
+.activity-section{flex:0 0 auto}
+.section-heading{margin-bottom:12px}
+.section-heading h2{font-size:21px}
+.task-card{padding:14px 16px 12px}
+.task-card h3{margin:10px 0 4px;font-size:15px}
+.task-card>p{margin-bottom:11px}
+.task-foot{margin-top:9px}
+.home-lower{flex:0 0 auto;grid-template-columns:1fr 1fr .92fr;gap:12px;margin-top:18px}
+.home-lower .home-section{padding:14px 15px 12px}
+.section-heading.compact{margin-bottom:6px}
+.compact .section-heading h2{font-size:17px}
+.section-intro{margin:6px 0 9px;line-height:1.45}
+.suggestion-row{padding:7px 0}
+.suggestion-icon{width:25px;height:25px}
+.mini-apps{gap:7px}
+.app-icon{width:24px;height:24px}
+.guidance-card{min-height:205px;padding:17px 17px}
+.guidance-copy h2{font-size:24px;margin:10px 0 7px}
+.guidance-copy p{margin:0}
+.page-scroll{scrollbar-width:thin;scrollbar-color:#766b60 #211f1b}
+.page-scroll:has(.home-page){overflow:hidden;scrollbar-width:none}
+.page-scroll:has(.home-page)::-webkit-scrollbar{display:none}
+@media(max-height:820px){
+ .home-page{padding-top:14px;padding-bottom:14px}
+ .welcome{margin-bottom:18px}
+ .welcome h1{font-size:38px;margin:9px 0 6px}
+ .command-box{margin:13px auto 7px;height:50px}
+ .home-lower{margin-top:13px}
+ .guidance-card{min-height:180px}
+}
+@media(max-width:1100px){
+ .home-page{padding-left:24px;padding-right:24px}
+ .home-lower{grid-template-columns:1fr 1fr}
+ .guidance-card{grid-column:span 2;min-height:160px}
+}
+@media(max-width:800px){
+ .home-page{height:auto;min-height:100%;overflow:visible;justify-content:flex-start}
+ .page-scroll:has(.home-page){overflow:auto}
+ .home-lower{grid-template-columns:1fr}
+ .guidance-card{grid-column:auto}
+}
