@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
+import { getCurrentWindow } from '@tauri-apps/api/window'
 import GuidanceOverlay from './GuidanceOverlay'
 import './App.css'
 
@@ -118,7 +119,7 @@ function MainApp() {
   </div>
 }
 function App() {
-  const isGuidanceWindow = new URLSearchParams(window.location.search).get('guidance') === '1'
+  const isGuidanceWindow = getCurrentWindow().label === 'guidance'
   return isGuidanceWindow ? <GuidanceOverlay /> : <MainApp />
 }
 export default App
