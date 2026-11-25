@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import { invoke } from '@tauri-apps/api/core'
+import GuidanceOverlay from './GuidanceOverlay'
 import './App.css'
 
 type Page = 'Home' | 'Active Sessions' | 'Explore possibilities' | 'Your computer' | 'Your activity' | 'Preferences'
@@ -50,7 +52,7 @@ function Icon({ name }: { name: string }) {
 function StatusPill({ status }: { status: Status | string }) {
   return <span className={'status status-' + status.toLowerCase().replaceAll(' ', '-')}>{status}</span>
 }
-function App() {
+function MainApp() {
   const [page, setPage] = useState<Page>('Home')
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState('All')
@@ -61,6 +63,17 @@ function App() {
   const [preferenceTab, setPreferenceTab] = useState('General')
   const filteredTasks = useMemo(() => localTasks.filter(t => (filter === 'All' || t.status === filter) && (t.title + t.app).toLowerCase().includes(query.toLowerCase())), [localTasks, filter, query])
   const notify = (message: string) => { setToast(message); window.setTimeout(() => setToast(''), 2600) }
+  const startRequest = async () => {
+    if (query.trim().toLowerCase() === 'test overlay') {
+      try {
+        await invoke('show_guidance_preview')
+      } catch (error) {
+        notify('Could not open the guidance overlay: ' + String(error))
+      }
+      return
+    }
+    notify(query.trim() ? 'Your request is ready to begin. Task execution will be connected next.' : 'Tell me what you would like help with.')
+  }
   const go = (next: Page) => { setPage(next); setToast('') }
   const updateTask = (index: number, status: Status) => setLocalTasks(old => old.map((t, i) => i === index ? { ...t, status } : t))
   const title = page === 'Home' ? 'Your workspace' : page
@@ -82,7 +95,7 @@ function App() {
       <div className="page-scroll">
         {page === 'Home' && <div className="home-page">
           <section className="welcome"><div className="eyebrow"><span className="eyebrow-line" /> YOUR PERSONAL GUIDE</div><h1>What are we<br/><em>working on?</em></h1><p className="welcome-copy">Tell me what you'd like to do. We'll figure it out together.</p>
-            <div className="command-box"><input value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && notify(query.trim() ? 'Your request is ready to begin. Task execution will be connected next.' : 'Tell me what you would like help with.')} placeholder="I want to find the photos from my birthday..." aria-label="Describe what you want help with"/><button className="mic-button" onClick={() => notify('Voice input will be available when local speech recognition is connected.')} aria-label="Voice input"><Icon name="mic" /></button><button className="send-button" onClick={() => notify(query.trim() ? 'Your request is ready to begin. Task execution will be connected next.' : 'Tell me what you would like help with.')} aria-label="Start"><Icon name="arrow" /></button></div>
+            <div className="command-box"><input value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && startRequest()} placeholder="I want to find the photos from my birthday..." aria-label="Describe what you want help with"/><button className="mic-button" onClick={() => notify('Voice input will be available when local speech recognition is connected.')} aria-label="Voice input"><Icon name="mic" /></button><button className="send-button" onClick={startRequest} aria-label="Start"><Icon name="arrow" /></button></div>
             <div className="command-hint"><span>TRY SOMETHING SIMPLE</span><button onClick={() => setQuery('Help me find a photo on my computer')}>Find a photo</button><i>·</i><button onClick={() => setQuery('Help me save a webpage')}>Save a webpage</button><i>·</i><button onClick={() => setQuery('Help me organise my files')}>Organise files</button></div>
           </section>
           <section className="home-section activity-section"><div className="section-heading"><div><div className="section-kicker">PICK UP WHERE YOU LEFT OFF</div><h2>Things we're doing</h2></div><button className="text-link" onClick={() => go('Active Sessions')}>View all <Icon name="arrow" /></button></div>
@@ -103,5 +116,9 @@ function App() {
     </main>
     {toast&&<div className="toast"><span className="toast-dot"/> {toast}</div>}
   </div>
+}
+function App() {
+  const isGuidanceWindow = new URLSearchParams(window.location.search).get('guidance') === '1'
+  return isGuidanceWindow ? <GuidanceOverlay /> : <MainApp />
 }
 export default App
