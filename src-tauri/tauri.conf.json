@@ -13,19 +13,18 @@
     "windows": [
       {
         "title": "TRACE",
-        "width": 1360,
-        "height": 860,
-        "minWidth": 1100,
+        "width": 1180,
+        "height": 780,
+        "minWidth": 1050,
         "minHeight": 700,
         "center": true,
-        "resizable": true,
+        "resizable": false,
         "maximized": false,
-        "fullscreen": false
+        "fullscreen": false,
+        "decorations": false
       }
     ],
-    "security": {
-      "csp": null
-    }
+    "security": { "csp": null }
   },
   "bundle": {
     "active": true,
@@ -37,8 +36,6 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "android": {
-      "debugApplicationIdSuffix": ".debug"
-    }
+    "android": { "debugApplicationIdSuffix": ".debug" }
   }
 }
