@@ -78,7 +78,7 @@ function App() {
       </div>
     </aside>
     <main className="main-area">
-      <header className="topbar"><div className="breadcrumb"><span>TRACE</span><Icon name="chevron" /><strong>{title}</strong></div><div className="topbar-right"><span className="local-indicator"><i /> Local mode</span><button className="top-avatar" onClick={() => go('Preferences')}>S</button></div></header>
+      <header className="topbar" data-tauri-drag-region><div className="breadcrumb"><span>TRACE</span><Icon name="chevron" /><strong>{title}</strong></div><div className="topbar-right"><span className="local-indicator"><i /> Local mode</span><button className="top-avatar" onClick={() => go('Preferences')}>S</button></div></header>
       <div className="page-scroll">
         {page === 'Home' && <div className="home-page">
           <section className="welcome"><div className="eyebrow"><span className="eyebrow-line" /> YOUR PERSONAL GUIDE</div><h1>What are we<br/><em>working on?</em></h1><p className="welcome-copy">Tell me what you'd like to do. We'll figure it out together.</p>
