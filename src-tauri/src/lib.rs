@@ -25,9 +25,7 @@ fn show_guidance_preview(app: tauri::AppHandle) -> Result<(), String> {
     .map_err(|error| error.to_string())?;
   }
 
-  if let Some(main) = app.get_webview_window("main") {
-    main.hide().map_err(|error| error.to_string())?;
-  }
+  // Keep the main window visible during preview until overlay interaction is verified.
   Ok(())
 }
 
