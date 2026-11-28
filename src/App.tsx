@@ -45,6 +45,8 @@ function MainApp() {
   const [transcript, setTranscript] = useState('')
   const [parsedRequest, setParsedRequest] = useState<ParsedRequest | null>(null)
   const [searchOpening, setSearchOpening] = useState(false)
+  const [chromeBounds, setChromeBounds] = useState<{x:number;y:number;width:number;height:number}|null>(null)
+  const [checkingChrome, setCheckingChrome] = useState(false)
   const streamRef = useRef<MediaStream | null>(null)
   const recorderRef = useRef<MediaRecorder | null>(null)
   const audioContextRef = useRef<AudioContext | null>(null)
@@ -227,6 +229,21 @@ function MainApp() {
       setSearchOpening(false)
     }
   }
+
+  const checkChromeWindow = async () => {
+    setCheckingChrome(true)
+    try {
+      const bounds = await invoke<{x:number;y:number;width:number;height:number}>('get_chrome_bounds')
+      setChromeBounds(bounds)
+      setNotice('Chrome is visible. I can see its window and determine where guidance should appear.')
+    } catch (error) {
+      setChromeBounds(null)
+      setNotice(String(error).replace(/^Error: /, ''))
+    } finally {
+      setCheckingChrome(false)
+    }
+  }
+
   const exitTrace = async () => {
     if (micState === 'listening') finishRecording('manual')
     try {
@@ -291,6 +308,12 @@ function MainApp() {
                     <span aria-hidden="true">→</span>
                   </button>
                 )}
+                {parsedRequest.intent !== 'clarification' && (
+                  <button className="trace-search-action trace-secondary-action" onClick={checkChromeWindow} disabled={checkingChrome}>
+                    {checkingChrome ? 'CHECKING CHROME…' : chromeBounds ? 'CHROME WINDOW DETECTED ✓' : 'CHECK CHROME WINDOW'}
+                  </button>
+                )}
+                {chromeBounds && <span className="trace-window-dimensions">Window detected · {chromeBounds.width} × {chromeBounds.height}</span>}
               </div>
             )}
           </div>
