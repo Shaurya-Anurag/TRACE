@@ -59,6 +59,48 @@ fn open_search(intent: String, query: String) -> Result<String, String> {
     Ok("Opening Google search in Chrome.".into())
 }
 
+
+#[derive(serde::Serialize)]
+struct ChromeBounds {
+    x: i32,
+    y: i32,
+    width: i32,
+    height: i32,
+}
+
+#[tauri::command]
+fn get_chrome_bounds() -> Result<ChromeBounds, String> {
+    #[cfg(target_os = "windows")]
+    {
+        use std::ptr;
+        use windows_sys::Win32::Foundation::RECT;
+        use windows_sys::Win32::UI::WindowsAndMessaging::{FindWindowW, GetWindowRect, IsWindowVisible};
+
+        let class_name: Vec<u16> = "Chrome_WidgetWin_1\0".encode_utf16().collect();
+        let hwnd = unsafe { FindWindowW(class_name.as_ptr(), ptr::null()) };
+        if hwnd.is_null() {
+            return Err("I can't see an open Google Chrome window yet. Open Chrome and try again.".into());
+        }
+        if unsafe { IsWindowVisible(hwnd) } == 0 {
+            return Err("The Chrome window is not visible. Bring it to the front and try again.".into());
+        }
+        let mut rect = RECT { left: 0, top: 0, right: 0, bottom: 0 };
+        if unsafe { GetWindowRect(hwnd, &mut rect) } == 0 {
+            return Err("Windows could not read the Chrome window position.".into());
+        }
+        let width = rect.right - rect.left;
+        let height = rect.bottom - rect.top;
+        if width <= 0 || height <= 0 {
+            return Err("Chrome appears to be minimised. Restore its window and try again.".into());
+        }
+        return Ok(ChromeBounds { x: rect.left, y: rect.top, width, height });
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        Err("Chrome window guidance currently supports Windows only.".into())
+    }
+}
+
 struct AppSpeechEngine(Arc<Mutex<Option<WhisperContext>>>);
 
 #[tauri::command]
@@ -88,7 +130,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             transcribe_audio,
             intent::interpret_request,
-            open_search
+            open_search,
+            get_chrome_bounds
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {
