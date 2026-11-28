@@ -13,9 +13,9 @@
     "windows": [
       {
         "title": "TRACE",
-        "width": 1180,
-        "height": 780,
-        "minWidth": 1050,
+        "width": 780,
+        "height": 700,
+        "minWidth": 780,
         "minHeight": 700,
         "center": true,
         "resizable": false,
@@ -24,7 +24,9 @@
         "decorations": false
       }
     ],
-    "security": { "csp": null }
+    "security": {
+      "csp": null
+    }
   },
   "bundle": {
     "active": true,
@@ -36,6 +38,8 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "android": { "debugApplicationIdSuffix": ".debug" }
+    "android": {
+      "debugApplicationIdSuffix": ".debug"
+    }
   }
 }
