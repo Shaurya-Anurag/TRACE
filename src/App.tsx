@@ -1,11 +1,38 @@
 import { useEffect, useRef, useState } from 'react'
+import { invoke } from '@tauri-apps/api/core'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import './App.css'
 
-type MicState = 'idle' | 'listening' | 'captured' | 'error'
+type MicState = 'idle' | 'listening' | 'transcribing' | 'captured' | 'error'
 
 function TraceMark() {
   return <div className="trace-mark" aria-hidden="true"><span className="trace-orbit trace-orbit-one"/><span className="trace-orbit trace-orbit-two"/><span className="trace-mark-core"/></div>
+}
+
+async function decodeToWhisperPcm(blob: Blob): Promise<number[]> {
+  const decodeContext = new AudioContext()
+  try {
+    const decoded = await decodeContext.decodeAudioData(await blob.arrayBuffer())
+    const sampleRate = 16_000
+    const frameCount = Math.ceil(decoded.duration * sampleRate)
+    const offline = new OfflineAudioContext(1, frameCount, sampleRate)
+    const mono = offline.createBuffer(1, decoded.length, decoded.sampleRate)
+    const output = mono.getChannelData(0)
+    const channels = Array.from({ length: decoded.numberOfChannels }, (_, channel) => decoded.getChannelData(channel))
+    for (let i = 0; i < decoded.length; i++) {
+      let sum = 0
+      for (const channel of channels) sum += channel[i]
+      output[i] = sum / channels.length
+    }
+    const source = offline.createBufferSource()
+    source.buffer = mono
+    source.connect(offline.destination)
+    source.start()
+    const rendered = await offline.startRendering()
+    return Array.from(rendered.getChannelData(0))
+  } finally {
+    await decodeContext.close()
+  }
 }
 
 function MainApp() {
@@ -14,6 +41,7 @@ function MainApp() {
   const [notice, setNotice] = useState('')
   const [audioLevel, setAudioLevel] = useState(0)
   const [capturedSeconds, setCapturedSeconds] = useState(0)
+  const [transcript, setTranscript] = useState('')
   const streamRef = useRef<MediaStream | null>(null)
   const recorderRef = useRef<MediaRecorder | null>(null)
   const audioContextRef = useRef<AudioContext | null>(null)
@@ -29,7 +57,7 @@ function MainApp() {
     return () => {
       window.clearTimeout(splashTimer)
       if (animationFrameRef.current !== null) cancelAnimationFrame(animationFrameRef.current)
-      recorderRef.current?.stop()
+      if (recorderRef.current && recorderRef.current.state !== 'inactive') recorderRef.current.stop()
       streamRef.current?.getTracks().forEach(track => track.stop())
       void audioContextRef.current?.close()
     }
@@ -54,16 +82,17 @@ function MainApp() {
     finishedRef.current = true
     const elapsed = Math.max(0, Math.round((performance.now() - startedAtRef.current) / 1000))
     setCapturedSeconds(elapsed)
-    if (reason === 'silence' && speechStartedAtRef.current > 0) {
-      setNotice('I heard you. Your audio was captured on this device. Offline transcription is the next step.')
-    } else if (reason === 'timeout') {
-      setNotice('I stopped listening after 30 seconds. Tap the microphone to try again.')
-    } else if (reason === 'manual') {
-      setNotice('Listening stopped. Your audio was captured locally.')
-    } else {
+    const hasSpeech = speechStartedAtRef.current > 0
+    if (reason === 'timeout') {
+      setNotice('I stopped listening after 30 seconds.')
+    } else if (!hasSpeech) {
+      setMicState('captured')
       setNotice('I didn’t hear anything clearly. Please try again, a little closer to your microphone.')
+    } else {
+      setMicState('transcribing')
+      setNotice('Transcribing on your device. The first run may download the local speech model.')
     }
-    setMicState('captured')
+
     const recorder = recorderRef.current
     if (recorder && recorder.state !== 'inactive') recorder.stop()
     releaseAudio()
@@ -74,6 +103,7 @@ function MainApp() {
       finishRecording('manual')
       return
     }
+    if (micState === 'transcribing') return
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
       setMicState('error')
       setNotice('Audio recording is not supported by this environment.')
@@ -81,6 +111,7 @@ function MainApp() {
     }
 
     setNotice('')
+    setTranscript('')
     setCapturedSeconds(0)
     setMicState('listening')
     finishedRef.current = false
@@ -103,6 +134,23 @@ function MainApp() {
       recorderRef.current = recorder
       recorder.ondataavailable = event => {
         if (event.data.size > 0) chunksRef.current.push(event.data)
+      }
+      recorder.onstop = async () => {
+        if (speechStartedAtRef.current === 0) return
+        try {
+          const recording = new Blob(chunksRef.current, { type: recorder.mimeType || 'audio/webm' })
+          const samples = await decodeToWhisperPcm(recording)
+          const result = await invoke<string>('transcribe_audio', { samples })
+          setTranscript(result)
+          setNotice('I heard: “' + result + '”')
+          setMicState('captured')
+        } catch (error) {
+          setMicState('error')
+          setNotice(String(error).replace(/^Error: /, ''))
+        } finally {
+          chunksRef.current = []
+          recorderRef.current = null
+        }
       }
       recorder.start(250)
 
@@ -169,7 +217,7 @@ function MainApp() {
     }
   }
 
-  const micLabel = micState === 'listening' ? 'LISTENING · TAP TO STOP' : micState === 'captured' ? 'TAP TO SPEAK AGAIN' : micState === 'error' ? 'MICROPHONE UNAVAILABLE' : 'TAP TO SPEAK'
+  const micLabel = micState === 'listening' ? 'LISTENING · TAP TO STOP' : micState === 'transcribing' ? 'UNDERSTANDING YOUR VOICE' : micState === 'captured' ? 'TAP TO SPEAK AGAIN' : micState === 'error' ? 'PLEASE TRY AGAIN' : 'TAP TO SPEAK'
 
   return (
     <main className="trace-app">
@@ -192,10 +240,11 @@ function MainApp() {
             <p>Just tell me what you're looking for. I'll help you get there.</p>
 
             <button
-              className={'trace-mic-button' + (micState === 'listening' ? ' listening' : '')}
+              className={'trace-mic-button' + (micState === 'listening' ? ' listening' : '') + (micState === 'transcribing' ? ' transcribing' : '')}
               onClick={startListening}
               aria-label={micState === 'listening' ? 'Stop listening' : 'Start speaking'}
               aria-pressed={micState === 'listening'}
+              disabled={micState === 'transcribing'}
             >
               <span className="mic-halo"/>
               <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M8.5 21.5h7"/></svg>
@@ -211,6 +260,7 @@ function MainApp() {
             )}
             <div className="trace-privacy"><span/> YOUR DEVICE · YOUR CONTROL</div>
             {notice && <p className="trace-notice" role="status">{notice}{capturedSeconds > 0 ? ' (' + capturedSeconds + 's)' : ''}</p>}
+            {transcript && <p className="trace-transcript">{transcript}</p>}
           </div>
 
           <footer className="trace-footer">
