@@ -36,7 +36,35 @@ async function decodeToWhisperPcm(blob: Blob): Promise<number[]> {
   }
 }
 
+function GuidanceOverlay() {
+  const close = async () => {
+    try {
+      await invoke('close_guidance_overlay')
+    } catch {
+      await getCurrentWindow().close()
+    }
+  }
+
+  return (
+    <main className="guidance-overlay">
+      <div className="guidance-wave" aria-hidden="true">
+        {Array.from({ length: 23 }, (_, index) => (
+          <span key={index} style={{ animationDelay: ((index % 7) * -0.13) + 's' }} />
+        ))}
+      </div>
+      <div className="guidance-copy">
+        <span className="guidance-kicker">TRACE · YOUR PERSONAL GUIDE</span>
+        <strong>Choose <em>Images</em> below the Google search bar.</strong>
+      </div>
+      <button className="guidance-close" onClick={close} aria-label="Close guidance and return to TRACE" title="Return to TRACE">×</button>
+    </main>
+  )
+}
+
 function MainApp() {
+  if (new URLSearchParams(window.location.search).get('overlay') === 'guidance') {
+    return <GuidanceOverlay />
+  }
   const [showSplash, setShowSplash] = useState(true)
   const [micState, setMicState] = useState<MicState>('idle')
   const [notice, setNotice] = useState('')
@@ -47,6 +75,7 @@ function MainApp() {
   const [searchOpening, setSearchOpening] = useState(false)
   const [chromeBounds, setChromeBounds] = useState<{x:number;y:number;width:number;height:number}|null>(null)
   const [checkingChrome, setCheckingChrome] = useState(false)
+  const [openingGuide, setOpeningGuide] = useState(false)
   const streamRef = useRef<MediaStream | null>(null)
   const recorderRef = useRef<MediaRecorder | null>(null)
   const audioContextRef = useRef<AudioContext | null>(null)
@@ -244,6 +273,18 @@ function MainApp() {
     }
   }
 
+  const showGuidance = async () => {
+    setOpeningGuide(true)
+    try {
+      await invoke('open_guidance_overlay')
+      setNotice('Guidance is open over Chrome. Choose Images below the Google search bar.')
+    } catch (error) {
+      setNotice(String(error).replace(/^Error: /, ''))
+    } finally {
+      setOpeningGuide(false)
+    }
+  }
+
   const exitTrace = async () => {
     if (micState === 'listening') finishRecording('manual')
     try {
@@ -313,7 +354,15 @@ function MainApp() {
                     {checkingChrome ? 'CHECKING CHROME…' : chromeBounds ? 'CHROME WINDOW DETECTED ✓' : 'CHECK CHROME WINDOW'}
                   </button>
                 )}
-                {chromeBounds && <span className="trace-window-dimensions">Window detected · {chromeBounds.width} × {chromeBounds.height}</span>}
+                {chromeBounds && (
+                  <>
+                    <button className="trace-search-action" onClick={showGuidance} disabled={openingGuide}>
+                      {openingGuide ? 'OPENING GUIDANCE…' : 'SHOW ME WHERE'}
+                      <span aria-hidden="true">→</span>
+                    </button>
+                    <span className="trace-window-dimensions">Window detected · {chromeBounds.width} × {chromeBounds.height}</span>
+                  </>
+                )}
               </div>
             )}
           </div>
