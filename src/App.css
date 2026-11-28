@@ -83,7 +83,7 @@ button:focus-visible { outline: 2px solid #c4a783; outline-offset: 4px; }
   flex-direction: column;
   padding: 25px 31px 20px;
   opacity: 0;
-  animation: home-in .8s ease 1.28s forwards;
+  animation: home-in .8s ease .04s forwards;
 }
 @keyframes home-in {
   to { opacity: 1; }
