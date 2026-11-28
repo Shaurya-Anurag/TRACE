@@ -141,6 +141,41 @@ fn open_guidance_overlay(app: tauri::AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
+async fn speak_guidance(text: String) -> Result<(), String> {
+    let text = text.trim().to_owned();
+    if text.is_empty() || text.len() > 400 {
+        return Err("Guidance text must be between 1 and 400 characters.".into());
+    }
+
+    tauri::async_runtime::spawn_blocking(move || {
+        #[cfg(target_os = "windows")]
+        {
+            use std::{os::windows::process::CommandExt, process::Command};
+            let escaped = text.replace('\\'', "\\'\\'");
+            let script = format!(
+                "Add-Type -AssemblyName System.Speech; $voice = New-Object System.Speech.Synthesis.SpeechSynthesizer; $voice.Speak('{}'); $voice.Dispose()",
+                escaped
+            );
+            let result = Command::new("powershell.exe")
+                .args(["-NoProfile", "-NonInteractive", "-Command", &script])
+                .creation_flags(0x08000000)
+                .output()
+                .map_err(|error| format!("Could not start Windows voice guidance: {error}"))?;
+            if !result.status.success() {
+                return Err("Windows could not play the guidance voice.".into());
+            }
+            Ok(())
+        }
+        #[cfg(not(target_os = "windows"))]
+        {
+            Err("Local voice guidance currently supports Windows only.".into())
+        }
+    })
+    .await
+    .map_err(|error| format!("Voice guidance task failed: {error}"))?
+}
+
+#[tauri::command]
 fn close_guidance_overlay(app: tauri::AppHandle) -> Result<(), String> {
     if let Some(overlay) = app.get_webview_window("guidance") {
         overlay.close().map_err(|error| format!("Could not close guidance: {error}"))?;
@@ -208,7 +243,8 @@ pub fn run() {
             open_search,
             get_chrome_bounds,
             open_guidance_overlay,
-            close_guidance_overlay
+            close_guidance_overlay,
+            speak_guidance
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {
