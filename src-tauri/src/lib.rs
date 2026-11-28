@@ -5,6 +5,60 @@ use std::sync::{Arc, Mutex};
 use tauri::{Manager, State};
 use whisper_rs::WhisperContext;
 
+fn encode_query(value: &str) -> String {
+    let mut encoded = String::new();
+    for byte in value.bytes() {
+        if byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.' | b'~') {
+            encoded.push(byte as char);
+        } else if byte == b' ' {
+            encoded.push('+');
+        } else {
+            encoded.push_str(&format!("%{byte:02X}"));
+        }
+    }
+    encoded
+}
+
+#[tauri::command]
+fn open_search(intent: String, query: String) -> Result<String, String> {
+    let query = query.trim();
+    if query.is_empty() {
+        return Err("Please tell me what you would like to search for.".into());
+    }
+    let encoded = encode_query(query);
+    let url = match intent.as_str() {
+        "image_search" => format!("https://www.google.com/search?tbm=isch&q={encoded}"),
+        "web_search" => format!("https://www.google.com/search?q={encoded}"),
+        _ => return Err("I couldn't identify the type of search. Please try speaking again.".into()),
+    };
+
+    #[cfg(target_os = "windows")]
+    {
+        use std::{path::PathBuf, process::Command};
+        let mut candidates: Vec<PathBuf> = Vec::new();
+        if let Ok(value) = std::env::var("PROGRAMFILES") {
+            candidates.push(PathBuf::from(value).join("Google/Chrome/Application/chrome.exe"));
+        }
+        if let Ok(value) = std::env::var("PROGRAMFILES(X86)") {
+            candidates.push(PathBuf::from(value).join("Google/Chrome/Application/chrome.exe"));
+        }
+        if let Ok(value) = std::env::var("LOCALAPPDATA") {
+            candidates.push(PathBuf::from(value).join("Google/Chrome/Application/chrome.exe"));
+        }
+        if let Some(chrome) = candidates.iter().find(|path| path.is_file()) {
+            Command::new(chrome).arg(&url).spawn()
+                .map_err(|error| format!("I found Chrome but couldn't open it: {error}"))?;
+        } else {
+            return Err("I couldn't find Google Chrome on this device. Please install Chrome and try again.".into());
+        }
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        return Err("The first TRACE search workflow currently supports Windows with Google Chrome.".into());
+    }
+    Ok("Opening Google search in Chrome.".into())
+}
+
 struct AppSpeechEngine(Arc<Mutex<Option<WhisperContext>>>);
 
 #[tauri::command]
@@ -33,7 +87,8 @@ pub fn run() {
         .manage(AppSpeechEngine(Arc::new(Mutex::new(None))))
         .invoke_handler(tauri::generate_handler![
             transcribe_audio,
-            intent::interpret_request
+            intent::interpret_request,
+            open_search
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {
