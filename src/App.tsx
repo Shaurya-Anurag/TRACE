@@ -14,7 +14,7 @@ function MainApp() {
   const [notice, setNotice] = useState('')
 
   useEffect(() => {
-    const splashTimer = window.setTimeout(() => setShowSplash(false), 1550)
+    const splashTimer = window.setTimeout(() => setShowSplash(false), 1650)
     return () => window.clearTimeout(splashTimer)
   }, [])
 
