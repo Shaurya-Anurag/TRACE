@@ -1,3 +1,4 @@
+mod intent;
 mod speech;
 
 use std::sync::{Arc, Mutex};
@@ -30,7 +31,10 @@ async fn transcribe_audio(
 pub fn run() {
     tauri::Builder::default()
         .manage(AppSpeechEngine(Arc::new(Mutex::new(None))))
-        .invoke_handler(tauri::generate_handler![transcribe_audio])
+        .invoke_handler(tauri::generate_handler![
+            transcribe_audio,
+            intent::interpret_request
+        ])
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
