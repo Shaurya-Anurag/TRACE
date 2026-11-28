@@ -449,3 +449,9 @@ html:has(.guidance-overlay), body:has(.guidance-overlay), body:has(.guidance-ove
   background: transparent !important;
   overflow: hidden;
 }
+
+.guidance-wave:not(.speaking) span {
+  animation: none;
+  transform: scaleY(.55);
+  opacity: .55;
+}
