@@ -151,7 +151,7 @@ async fn speak_guidance(text: String) -> Result<(), String> {
         #[cfg(target_os = "windows")]
         {
             use std::{os::windows::process::CommandExt, process::Command};
-            let escaped = text.replace('\\'', "\\'\\'");
+            let escaped = text.replace('\\'', "''");
             let script = format!(
                 "Add-Type -AssemblyName System.Speech; $voice = New-Object System.Speech.Synthesis.SpeechSynthesizer; $voice.Speak('{}'); $voice.Dispose()",
                 escaped
