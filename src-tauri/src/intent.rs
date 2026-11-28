@@ -33,6 +33,15 @@ pub fn interpret_request(transcript: String) -> Result<ParsedRequest, String> {
         "look for pictures of ", "look for images of ", "look for photos of ",
         "search images for ", "search google images for ", "pictures of ", "images of ", "photos of ",
     ];
+    if image_prefixes.iter().any(|prefix| lower == prefix.trim()) {
+        return Ok(ParsedRequest {
+            intent: SearchIntent::Clarification,
+            query: String::new(),
+            search_engine: "google",
+            confidence: "low",
+            guidance: "What pictures would you like me to find?".into(),
+        });
+    }
     if let Some(rest) = strip_prefix(&lower, &image_prefixes) {
         let query = clean_query(rest);
         if query.is_empty() {
