@@ -262,3 +262,27 @@ button:focus-visible { outline: 2px solid #c4a783; outline-offset: 4px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+.trace-mic-button.listening {
+  background: linear-gradient(145deg, #6a5138, #443326);
+  box-shadow: 0 0 0 8px rgba(182,154,122,.09), 0 0 34px rgba(182,154,122,.16), inset 0 1px 0 rgba(255,255,255,.1);
+}
+.trace-mic-button.listening .mic-halo { animation: mic-pulse .9s ease-in-out infinite; }
+.trace-live-meter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 34px;
+  margin: 10px auto -17px;
+}
+.trace-live-meter span {
+  display: block;
+  width: 3px;
+  min-height: 3px;
+  max-height: 30px;
+  border-radius: 4px;
+  background: #b69a78;
+  opacity: .9;
+  transition: height 75ms linear;
+}
