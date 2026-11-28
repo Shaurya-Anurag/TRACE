@@ -28,10 +28,10 @@ pub fn interpret_request(transcript: String) -> Result<ParsedRequest, String> {
     let lower = original.to_lowercase();
     let image_prefixes = [
         "i want to find pictures of ", "i want to find images of ", "i want to find photos of ",
-        "find pictures of ", "find images of ", "find photos of ",
-        "show me pictures of ", "show me images of ", "show me photos of ",
-        "look for pictures of ", "look for images of ", "look for photos of ",
-        "search images for ", "search google images for ", "pictures of ", "images of ", "photos of ",
+        "find pictures of ", "find picture of ", "find images of ", "find image of ", "find photos of ", "find photo of ",
+        "show me pictures of ", "show me picture of ", "show me images of ", "show me image of ", "show me photos of ", "show me photo of ",
+        "look for pictures of ", "look for picture of ", "look for images of ", "look for image of ", "look for photos of ", "look for photo of ",
+        "search images for ", "search google images for ", "pictures of ", "picture of ", "images of ", "image of ", "photos of ", "photo of ",
     ];
     if image_prefixes.iter().any(|prefix| lower == prefix.trim()) {
         return Ok(ParsedRequest {
