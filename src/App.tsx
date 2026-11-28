@@ -37,6 +37,16 @@ async function decodeToWhisperPcm(blob: Blob): Promise<number[]> {
 }
 
 function GuidanceOverlay() {
+  const [speaking, setSpeaking] = useState(true)
+
+  useEffect(() => {
+    let active = true
+    invoke('speak_guidance', { text: 'To see pictures, choose Images just below the Google search bar. I will wait while you do that.' })
+      .catch(() => undefined)
+      .finally(() => { if (active) setSpeaking(false) })
+    return () => { active = false }
+  }, [])
+
   const close = async () => {
     try {
       await invoke('close_guidance_overlay')
@@ -47,7 +57,7 @@ function GuidanceOverlay() {
 
   return (
     <main className="guidance-overlay">
-      <div className="guidance-wave" aria-hidden="true">
+      <div className={'guidance-wave' + (speaking ? ' speaking' : '')} aria-hidden="true">
         {Array.from({ length: 23 }, (_, index) => (
           <span key={index} style={{ animationDelay: ((index % 7) * -0.13) + 's' }} />
         ))}
