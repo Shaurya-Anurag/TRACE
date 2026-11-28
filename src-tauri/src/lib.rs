@@ -3,7 +3,6 @@ mod speech;
 
 use std::sync::{Arc, Mutex};
 use tauri::{Manager, State, WebviewUrl, WebviewWindowBuilder};
-use tauri::PhysicalPosition;
 use whisper_rs::WhisperContext;
 
 fn encode_query(value: &str) -> String {
@@ -116,7 +115,7 @@ fn open_guidance_overlay(app: tauri::AppHandle) -> Result<(), String> {
 
     let width = 460_i32;
     let height = 86_i32;
-    let x = bounds.x + (bounds.width - width) / 2;
+    let x = bounds.x + bounds.width - width - 24;
     let y = bounds.y + 78;
 
     let overlay = WebviewWindowBuilder::new(
