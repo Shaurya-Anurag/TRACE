@@ -328,3 +328,26 @@ button:focus-visible { outline: 2px solid #c4a783; outline-offset: 4px; }
   font-weight: 700;
   letter-spacing: .18em;
 }
+
+.trace-search-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 7px;
+  padding: 8px 13px;
+  border: 1px solid rgba(180,154,122,.42);
+  border-radius: 5px;
+  background: rgba(180,154,122,.12);
+  color: #d0b18b;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .13em;
+  cursor: pointer;
+  transition: background .18s ease, border-color .18s ease;
+}
+.trace-search-action:hover:not(:disabled) {
+  background: rgba(180,154,122,.22);
+  border-color: rgba(180,154,122,.7);
+}
+.trace-search-action:disabled { opacity: .55; cursor: wait; }
