@@ -117,12 +117,12 @@ fn open_guidance_overlay(app: tauri::AppHandle) -> Result<(), String> {
     let width = 460_i32;
     let height = 86_i32;
     let x = bounds.x + (bounds.width - width) / 2;
-    let y = bounds.y + 92;
+    let y = bounds.y + 78;
 
     let overlay = WebviewWindowBuilder::new(
         &app,
         "guidance",
-        WebviewUrl::App("index.html?overlay=guidance".into()),
+        WebviewUrl::App("index.html".into()),
     )
     .title("TRACE Guidance")
     .inner_size(width as f64, height as f64)
@@ -137,7 +137,6 @@ fn open_guidance_overlay(app: tauri::AppHandle) -> Result<(), String> {
     .build()
     .map_err(|error| format!("Could not open TRACE guidance: {error}"))?;
 
-    let _ = overlay.set_focus();
     Ok(())
 }
 
