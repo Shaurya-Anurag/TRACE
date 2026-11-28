@@ -44,6 +44,7 @@ function MainApp() {
   const [capturedSeconds, setCapturedSeconds] = useState(0)
   const [transcript, setTranscript] = useState('')
   const [parsedRequest, setParsedRequest] = useState<ParsedRequest | null>(null)
+  const [searchOpening, setSearchOpening] = useState(false)
   const streamRef = useRef<MediaStream | null>(null)
   const recorderRef = useRef<MediaRecorder | null>(null)
   const audioContextRef = useRef<AudioContext | null>(null)
@@ -213,6 +214,19 @@ function MainApp() {
     }
   }
 
+  const openSearch = async () => {
+    if (!parsedRequest || parsedRequest.intent === 'clarification' || searchOpening) return
+    setSearchOpening(true)
+    setNotice('Opening Google in Chrome…')
+    try {
+      const message = await invoke<string>('open_search', { intent: parsedRequest.intent, query: parsedRequest.query })
+      setNotice(message)
+    } catch (error) {
+      setNotice(String(error).replace(/^Error: /, ''))
+    } finally {
+      setSearchOpening(false)
+    }
+  }
   const exitTrace = async () => {
     if (micState === 'listening') finishRecording('manual')
     try {
@@ -271,6 +285,12 @@ function MainApp() {
                 <span className="trace-intent-label">{parsedRequest.intent === 'image_search' ? 'IMAGE SEARCH' : parsedRequest.intent === 'web_search' ? 'WEB SEARCH' : 'NEEDS CLARIFICATION'}</span>
                 {parsedRequest.query && <strong>{parsedRequest.query}</strong>}
                 <span>{parsedRequest.guidance}</span>
+                {parsedRequest.intent !== 'clarification' && (
+                  <button className="trace-search-action" onClick={openSearch} disabled={searchOpening}>
+                    {searchOpening ? 'OPENING CHROME…' : parsedRequest.intent === 'image_search' ? 'OPEN GOOGLE IMAGES' : 'OPEN GOOGLE SEARCH'}
+                    <span aria-hidden="true">→</span>
+                  </button>
+                )}
               </div>
             )}
           </div>
