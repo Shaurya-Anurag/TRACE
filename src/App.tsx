@@ -4,6 +4,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window'
 import './App.css'
 
 type MicState = 'idle' | 'listening' | 'transcribing' | 'captured' | 'error'
+type ParsedRequest = { intent: 'image_search' | 'web_search' | 'clarification'; query: string; search_engine: string; confidence: 'high' | 'medium' | 'low'; guidance: string }
 
 function TraceMark() {
   return <div className="trace-mark" aria-hidden="true"><span className="trace-orbit trace-orbit-one"/><span className="trace-orbit trace-orbit-two"/><span className="trace-mark-core"/></div>
@@ -42,6 +43,7 @@ function MainApp() {
   const [audioLevel, setAudioLevel] = useState(0)
   const [capturedSeconds, setCapturedSeconds] = useState(0)
   const [transcript, setTranscript] = useState('')
+  const [parsedRequest, setParsedRequest] = useState<ParsedRequest | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const recorderRef = useRef<MediaRecorder | null>(null)
   const audioContextRef = useRef<AudioContext | null>(null)
@@ -112,6 +114,7 @@ function MainApp() {
 
     setNotice('')
     setTranscript('')
+    setParsedRequest(null)
     setCapturedSeconds(0)
     setMicState('listening')
     finishedRef.current = false
@@ -142,6 +145,8 @@ function MainApp() {
           const samples = await decodeToWhisperPcm(recording)
           const result = await invoke<string>('transcribe_audio', { samples })
           setTranscript(result)
+          const parsed = await invoke<ParsedRequest>('interpret_request', { transcript: result })
+          setParsedRequest(parsed)
           setNotice('I heard: “' + result + '”')
           setMicState('captured')
         } catch (error) {
@@ -261,6 +266,13 @@ function MainApp() {
             <div className="trace-privacy"><span/> YOUR DEVICE · YOUR CONTROL</div>
             {notice && <p className="trace-notice" role="status">{notice}{capturedSeconds > 0 ? ' (' + capturedSeconds + 's)' : ''}</p>}
             {transcript && <p className="trace-transcript">{transcript}</p>}
+            {parsedRequest && (
+              <div className="trace-intent-result" role="status">
+                <span className="trace-intent-label">{parsedRequest.intent === 'image_search' ? 'IMAGE SEARCH' : parsedRequest.intent === 'web_search' ? 'WEB SEARCH' : 'NEEDS CLARIFICATION'}</span>
+                {parsedRequest.query && <strong>{parsedRequest.query}</strong>}
+                <span>{parsedRequest.guidance}</span>
+              </div>
+            )}
           </div>
 
           <footer className="trace-footer">
