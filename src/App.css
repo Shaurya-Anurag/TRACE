@@ -286,3 +286,18 @@ button:focus-visible { outline: 2px solid #c4a783; outline-offset: 4px; }
   opacity: .9;
   transition: height 75ms linear;
 }
+
+.trace-mic-button.transcribing {
+  cursor: progress;
+  opacity: .82;
+  box-shadow: 0 0 0 8px rgba(182,154,122,.08), 0 0 30px rgba(182,154,122,.12);
+}
+.trace-mic-button.transcribing .mic-halo { animation: mic-pulse 1.4s ease-in-out infinite; }
+.trace-transcript {
+  max-width: 440px;
+  margin: 8px auto 0 !important;
+  color: #e0d9d3 !important;
+  font-family: 'DM Sans', 'Segoe UI', sans-serif !important;
+  font-size: 12px !important;
+  line-height: 1.55 !important;
+}
