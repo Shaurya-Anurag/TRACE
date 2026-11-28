@@ -68,32 +68,61 @@ struct ChromeBounds {
     height: i32,
 }
 
+#[cfg(target_os = "windows")]
+unsafe extern "system" fn collect_chrome_window(
+    hwnd: windows_sys::Win32::Foundation::HWND,
+    state: windows_sys::Win32::Foundation::LPARAM,
+) -> windows_sys::Win32::Foundation::BOOL {
+    use windows_sys::Win32::Foundation::RECT;
+    use windows_sys::Win32::UI::WindowsAndMessaging::{
+        GetClassNameW, GetWindowRect, IsIconic, IsWindowVisible,
+    };
+
+    let mut class_name = [0u16; 256];
+    let class_len = unsafe { GetClassNameW(hwnd, class_name.as_mut_ptr(), class_name.len() as i32) };
+    if class_len <= 0 {
+        return 1;
+    }
+    let class_name = String::from_utf16_lossy(&class_name[..class_len as usize]);
+    if class_name != "Chrome_WidgetWin_1" {
+        return 1;
+    }
+    if unsafe { IsWindowVisible(hwnd) } == 0 || unsafe { IsIconic(hwnd) } != 0 {
+        return 1;
+    }
+
+    let mut rect = RECT { left: 0, top: 0, right: 0, bottom: 0 };
+    if unsafe { GetWindowRect(hwnd, &mut rect) } == 0 {
+        return 1;
+    }
+    let width = rect.right - rect.left;
+    let height = rect.bottom - rect.top;
+    if width <= 0 || height <= 0 {
+        return 1;
+    }
+
+    let windows = unsafe { &mut *(state as *mut Vec<ChromeBounds>) };
+    windows.push(ChromeBounds { x: rect.left, y: rect.top, width, height });
+    1
+}
+
 #[tauri::command]
 fn get_chrome_bounds() -> Result<ChromeBounds, String> {
     #[cfg(target_os = "windows")]
     {
-        use std::ptr;
-        use windows_sys::Win32::Foundation::RECT;
-        use windows_sys::Win32::UI::WindowsAndMessaging::{FindWindowW, GetWindowRect, IsWindowVisible};
+        use windows_sys::Win32::UI::WindowsAndMessaging::EnumWindows;
 
-        let class_name: Vec<u16> = "Chrome_WidgetWin_1\0".encode_utf16().collect();
-        let hwnd = unsafe { FindWindowW(class_name.as_ptr(), ptr::null()) };
-        if hwnd.is_null() {
-            return Err("I can't see an open Google Chrome window yet. Open Chrome and try again.".into());
+        let mut windows: Vec<ChromeBounds> = Vec::new();
+        let state = &mut windows as *mut Vec<ChromeBounds> as isize;
+        let completed = unsafe { EnumWindows(Some(collect_chrome_window), state) };
+        if completed == 0 {
+            return Err("Windows could not inspect the open application windows.".into());
         }
-        if unsafe { IsWindowVisible(hwnd) } == 0 {
-            return Err("The Chrome window is not visible. Bring it to the front and try again.".into());
-        }
-        let mut rect = RECT { left: 0, top: 0, right: 0, bottom: 0 };
-        if unsafe { GetWindowRect(hwnd, &mut rect) } == 0 {
-            return Err("Windows could not read the Chrome window position.".into());
-        }
-        let width = rect.right - rect.left;
-        let height = rect.bottom - rect.top;
-        if width <= 0 || height <= 0 {
-            return Err("Chrome appears to be minimised. Restore its window and try again.".into());
-        }
-        return Ok(ChromeBounds { x: rect.left, y: rect.top, width, height });
+
+        windows
+            .into_iter()
+            .max_by_key(|window| i64::from(window.width) * i64::from(window.height))
+            .ok_or_else(|| "I couldn't find a visible Google Chrome window. Make sure Chrome is open and restored, then try again.".into())
     }
     #[cfg(not(target_os = "windows"))]
     {
