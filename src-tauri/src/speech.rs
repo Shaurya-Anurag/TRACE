@@ -108,7 +108,7 @@ pub fn transcribe(
         .map_err(|error| format!("Could not initialise speech recognition: {error}"))?;
 
     let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
-    params.set_language(Some("auto"));
+    params.set_language(Some("en"));
     params.set_n_threads(4);
     params.set_no_context(true);
     params.set_no_timestamps(true);
