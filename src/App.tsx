@@ -62,9 +62,6 @@ function GuidanceOverlay() {
 }
 
 function MainApp() {
-  if (new URLSearchParams(window.location.search).get('overlay') === 'guidance') {
-    return <GuidanceOverlay />
-  }
   const [showSplash, setShowSplash] = useState(true)
   const [micState, setMicState] = useState<MicState>('idle')
   const [notice, setNotice] = useState('')
@@ -380,4 +377,8 @@ function MainApp() {
   )
 }
 
-export default MainApp
+function AppRouter() {
+  return getCurrentWindow().label === 'guidance' ? <GuidanceOverlay /> : <MainApp />
+}
+
+export default AppRouter
