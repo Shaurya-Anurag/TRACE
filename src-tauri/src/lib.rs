@@ -2,7 +2,8 @@ mod intent;
 mod speech;
 
 use std::sync::{Arc, Mutex};
-use tauri::{Manager, State};
+use tauri::{Manager, State, WebviewUrl, WebviewWindowBuilder};
+use tauri::PhysicalPosition;
 use whisper_rs::WhisperContext;
 
 fn encode_query(value: &str) -> String {
@@ -107,6 +108,52 @@ unsafe extern "system" fn collect_chrome_window(
 }
 
 #[tauri::command]
+fn open_guidance_overlay(app: tauri::AppHandle) -> Result<(), String> {
+    let bounds = get_chrome_bounds()?;
+    if let Some(existing) = app.get_webview_window("guidance") {
+        let _ = existing.close();
+    }
+
+    let width = 460_i32;
+    let height = 86_i32;
+    let x = bounds.x + (bounds.width - width) / 2;
+    let y = bounds.y + 92;
+
+    let overlay = WebviewWindowBuilder::new(
+        &app,
+        "guidance",
+        WebviewUrl::App("index.html?overlay=guidance".into()),
+    )
+    .title("TRACE Guidance")
+    .inner_size(width as f64, height as f64)
+    .position(x as f64, y as f64)
+    .transparent(true)
+    .decorations(false)
+    .shadow(false)
+    .always_on_top(true)
+    .skip_taskbar(true)
+    .resizable(false)
+    .focused(false)
+    .build()
+    .map_err(|error| format!("Could not open TRACE guidance: {error}"))?;
+
+    let _ = overlay.set_focus();
+    Ok(())
+}
+
+#[tauri::command]
+fn close_guidance_overlay(app: tauri::AppHandle) -> Result<(), String> {
+    if let Some(overlay) = app.get_webview_window("guidance") {
+        overlay.close().map_err(|error| format!("Could not close guidance: {error}"))?;
+    }
+    if let Some(main) = app.get_webview_window("main") {
+        let _ = main.show();
+        let _ = main.set_focus();
+    }
+    Ok(())
+}
+
+#[tauri::command]
 fn get_chrome_bounds() -> Result<ChromeBounds, String> {
     #[cfg(target_os = "windows")]
     {
@@ -160,7 +207,9 @@ pub fn run() {
             transcribe_audio,
             intent::interpret_request,
             open_search,
-            get_chrome_bounds
+            get_chrome_bounds,
+            open_guidance_overlay,
+            close_guidance_overlay
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {
