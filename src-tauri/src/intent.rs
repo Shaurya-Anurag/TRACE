@@ -68,7 +68,7 @@ mod tests {
     #[test]
     fn recognises_image_search_requests() {
         let parsed = interpret_request("Find pictures of fluffy cats".into()).unwrap();
-        assert!(matches!(parsed.intent, SearchIntent::ImageSearch));
+        assert!(matches!(&parsed.intent, SearchIntent::ImageSearch));
         assert_eq!(parsed.query, "fluffy cats");
         assert_eq!(parsed.search_engine, "google");
     }
@@ -76,14 +76,14 @@ mod tests {
     #[test]
     fn recognises_general_web_search_requests() {
         let parsed = interpret_request("Search for beginner gardening tips".into()).unwrap();
-        assert!(matches!(parsed.intent, SearchIntent::WebSearch));
+        assert!(matches!(&parsed.intent, SearchIntent::WebSearch));
         assert_eq!(parsed.query, "beginner gardening tips");
     }
 
     #[test]
     fn asks_for_clarification_when_image_subject_is_missing() {
         let parsed = interpret_request("Find pictures of ".into()).unwrap();
-        assert!(matches!(parsed.intent, SearchIntent::Clarification));
+        assert!(matches!(&parsed.intent, SearchIntent::Clarification));
         assert!(parsed.query.is_empty());
     }
 }
